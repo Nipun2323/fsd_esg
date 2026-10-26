@@ -18,12 +18,17 @@ Aligned to **India's BRSR** (SEBI format) and the **EU's CSRD / ESRS**.
 ![Python](https://img.shields.io/badge/Python-planned-3776ab?logo=python&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-planned-4479a1?logo=mysql&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+[![Live demo](https://img.shields.io/badge/Live_demo-fsd--esg.netlify.app-00c7b7?logo=netlify&logoColor=white)](https://fsd-esg.netlify.app)
+
+### [→ Open the live app](https://fsd-esg.netlify.app)
+
+<sub>Running on bundled demo data — no sign-in, no setup.</sub>
 
 </div>
 
 <br>
 
-![Dashboard](docs/screenshots/dashboard.png)
+<a href="https://fsd-esg.netlify.app"><img src="docs/screenshots/dashboard.png" alt="Dashboard"></a>
 
 ---
 
@@ -97,6 +102,11 @@ every chart, and charts validated for colour-vision deficiency.
 ---
 
 ## Quick start
+
+Nothing to install — the app is live at
+**[fsd-esg.netlify.app](https://fsd-esg.netlify.app)**.
+
+To run it locally:
 
 **Requirements:** Node.js 20 or later.
 
@@ -181,7 +191,7 @@ compliance screen is generated from them.
 
 | Target | Notes |
 |---|---|
-| **Netlify** | Base directory `frontend`, publish `frontend/dist`. `netlify.toml` included |
+| **Netlify** | **In use — [fsd-esg.netlify.app](https://fsd-esg.netlify.app)**. Base directory `frontend`, publish `frontend/dist`. `netlify.toml` included; pushes to `main` redeploy automatically |
 | **Vercel** | Root directory `frontend`. `vercel.json` included |
 | **Docker** | Multi-stage build behind nginx. `Dockerfile` + `docker-compose.yml` included |
 | **GitHub Pages** | `npm run build:pages` (hash routing, since Pages has no SPA fallback) |
