@@ -17,6 +17,7 @@ Aligned to **India's BRSR** (SEBI format) and the **EU's CSRD / ESRS**.
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06b6d4?logo=tailwindcss&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-planned-3776ab?logo=python&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-planned-4479a1?logo=mysql&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
 </div>
 
@@ -39,6 +40,7 @@ Aligned to **India's BRSR** (SEBI format) and the **EU's CSRD / ESRS**.
 - [Methodology](#methodology)
 - [Scope and limitations](#scope-and-limitations)
 - [Work split](#work-split)
+- [License](#license)
 
 ---
 
@@ -271,3 +273,11 @@ date.
 | AI integration | `ai_service.py`, prompts |
 
 Each module has one job, so the work parallelises without collisions.
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE) — use, modify and distribute freely,
+including commercially, provided the copyright notice and licence text travel
+with the code. The software is provided as is, without warranty.
