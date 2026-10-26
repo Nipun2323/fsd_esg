@@ -1,0 +1,42 @@
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        # Same-origin /api avoids CORS; nginx proxies it to the backend.
+        VITE_USE_MOCK: "false"
+        VITE_API_BASE_URL: "/api"
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Your FastAPI service wrapping database.py / calculator.py /
+  # ai_service.py / pdf_service.py. Uncomment once it exists, and
+  # uncomment the /api/ block in nginx.conf.
+  backend:
+    image: esg-backend:latest
+    environment:
+      MYSQL_HOST: db
+      MYSQL_USER: esg
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
+      MYSQL_DATABASE: esg
+      AI_API_KEY: ${AI_API_KEY:?set AI_API_KEY in .env}
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: esg
+      MYSQL_USER: esg
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  db-data:
