@@ -12,7 +12,29 @@ import type {
   User,
 } from '@/types'
 
-const BASE = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000').replace(/\/$/, '')
+/**
+ * Where the API lives.
+ *
+ * Runtime config wins, so a deployed build can be repointed by editing
+ * public/config.js on the host. Falls back to the build-time variable,
+ * then to localhost for development.
+ */
+declare global {
+  interface Window {
+    __ESG_CONFIG__?: { apiBaseUrl?: string }
+  }
+}
+
+const runtimeBase =
+  typeof window !== 'undefined' ? (window.__ESG_CONFIG__?.apiBaseUrl ?? '') : ''
+
+export const API_BASE = (
+  runtimeBase ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'http://localhost:8000'
+).replace(/\/$/, '')
+
+const BASE = API_BASE
 const TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT ?? 60000)
 const TOKEN_KEY = 'esg.token'
 

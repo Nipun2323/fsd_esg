@@ -17,6 +17,9 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Served as-is, not bundled: lets a deployed site be pointed at a
+         different backend without rebuilding. -->
+    <script src="/config.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

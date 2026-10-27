@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Leaf, LogIn, UserPlus } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
+import { API_BASE } from '@/api/http'
 import { Button, Callout, Field, inputClass, Spinner } from '@/components/ui'
 
 type Mode = 'login' | 'signup'
@@ -10,6 +11,20 @@ export default function Login() {
   const [mode, setMode] = useState<Mode>('login')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [apiUp, setApiUp] = useState<boolean | null>(null)
+
+  // Check the API on load. A deployed frontend with no reachable
+  // backend is the most likely way this page fails, and it should say
+  // so rather than only failing when someone tries to sign in.
+  useEffect(() => {
+    let cancelled = false
+    fetch(`${API_BASE}/api/health`)
+      .then((r) => !cancelled && setApiUp(r.ok))
+      .catch(() => !cancelled && setApiUp(false))
+    return () => {
+      cancelled = true
+    }
+  }, [])
   const [form, setForm] = useState({
     username: '',
     password: '',
@@ -69,6 +84,28 @@ export default function Login() {
             </p>
           </div>
         </div>
+
+        {apiUp === false && (
+          <div className="mb-4">
+            <Callout tone="warning" title="The API is not reachable">
+              Nothing will work until the backend is running and this page can
+              reach it.
+              <br />
+              <br />
+              Currently pointing at{' '}
+              <code className="font-mono break-all">{API_BASE}</code>
+              <br />
+              <br />
+              Locally, start it with{' '}
+              <code className="font-mono">uvicorn app.main:app --reload</code> in{' '}
+              <code className="font-mono">backend/</code>. On a deployed site, set{' '}
+              <code className="font-mono">apiBaseUrl</code> in{' '}
+              <code className="font-mono">config.js</code> to your API's URL, and make
+              sure that origin is listed in the backend's{' '}
+              <code className="font-mono">CORS_ORIGINS</code>.
+            </Callout>
+          </div>
+        )}
 
         <div className="rounded-xl border border-hairline bg-surface-1 p-6">
           <div
@@ -162,7 +199,12 @@ export default function Login() {
               </p>
             )}
 
-            <Button type="submit" variant="primary" disabled={busy} className="w-full">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={busy || apiUp === false}
+              className="w-full"
+            >
               {busy ? (
                 <Spinner size={14} />
               ) : mode === 'login' ? (

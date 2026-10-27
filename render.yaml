@@ -1,0 +1,44 @@
+# One-click backend deploy on Render (free tier).
+#
+#   render.com -> New -> Blueprint -> pick this repo
+#
+# Render reads this file, builds backend/ and gives you a public URL.
+# Put that URL into the frontend's config.js (or VITE_API_BASE_URL) and
+# add it to the backend's CORS_ORIGINS.
+#
+# Note: the free tier sleeps after inactivity, so the first request
+# after a pause takes ~30s to wake. The free database is Postgres, not
+# MySQL; SQLite on a free instance is wiped on every redeploy, so use
+# the Postgres block below if the data must survive.
+
+services:
+  - type: web
+    name: fsd-esg-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt psycopg2-binary
+    startCommand: python -m scripts.import_companies || true; uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fsd-esg-db
+          property: connectionString
+      # Set these in the Render dashboard, not here.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DEFAULT_ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: fsd-esg-db
+    plan: free
+    databaseName: esg
+    user: esg
