@@ -2,16 +2,106 @@ export type Pillar = 'E' | 'S' | 'G'
 
 export type Framework = 'BRSR' | 'CSRD'
 
+export interface CompanyRating {
+  environment_score: number | null
+  environment_grade: string | null
+  environment_level: string | null
+  environment_percentile: number | null
+  social_score: number | null
+  social_grade: string | null
+  social_level: string | null
+  social_percentile: number | null
+  governance_score: number | null
+  governance_grade: string | null
+  governance_level: string | null
+  governance_percentile: number | null
+  total_score: number | null
+  total_grade: string | null
+  total_level: string | null
+  total_percentile: number | null
+  last_processing_date: string | null
+}
+
 export interface Company {
   id: number
   name: string
+  ticker: string | null
+  industry: string | null
+  exchange?: string | null
+  currency?: string
+  logo_url?: string | null
+  web_url?: string | null
+  employees?: number | null
+  country?: string | null
+  /** Financial years for which activity data exists. */
+  years?: number[]
+  /** Third-party rating from the imported dataset. Null for companies added by hand. */
+  rating?: CompanyRating | null
+  /** Present on search results only. */
+  total_grade?: string | null
+}
+
+export interface User {
+  id: number
+  username: string
+  email: string | null
+  is_admin: boolean
+  company_id: number | null
+}
+
+export interface RatingPillar {
+  pillar: Pillar
+  label: string
+  score: number
+  grade: string | null
+  level: string | null
+  percentile: number | null
+}
+
+export interface IndustryBenchmark {
   industry: string
-  employees: number
-  country: string
-  /** Reporting currency, ISO 4217. */
-  currency: string
-  /** Financial years for which any data exists. */
-  years: number[]
+  peers: number
+  companyScore: number
+  industryAverage: number
+}
+
+export interface HistoryPoint {
+  year: number
+  scope1: number
+  scope2: number
+  intensity: number
+  renewable: number
+  grid: number
+}
+
+/** Everything one dashboard screen needs, in a single response. */
+export interface Dashboard {
+  company: Company
+  year: number
+  framework: Framework
+  hasActivityData: boolean
+  metrics: CalculatedMetric[]
+  scores: Score[]
+  overall: number
+  gaps: DataGap[]
+  compliance: ComplianceSummary
+  disclosures: Disclosure[]
+  history: HistoryPoint[]
+  ratingPillars: RatingPillar[]
+  industryBenchmark: IndustryBenchmark | null
+}
+
+export interface UploadResult {
+  id: number
+  companyId: number
+  filename: string
+  sizeBytes: number
+  year: number | null
+  status: 'pending' | 'parsed' | 'failed'
+  extracted: Record<string, number>
+  extractionNote: string | null
+  usedAi: boolean
+  createdAt: string
 }
 
 export interface MetricDefinition {
@@ -37,6 +127,7 @@ export interface EsgDataset {
   companyId: number
   year: number
   values: Record<string, number | null>
+  source?: string
 }
 
 export interface CalculatedMetric {
@@ -129,9 +220,11 @@ export interface ReportSection {
   body: string
   /** True once a human has changed the AI text. */
   edited: boolean
-  generatedAt?: string
+  generatedAt?: string | null
   /** Metric keys the draft was grounded in. */
   groundedIn: string[]
+  /** False when the deterministic fallback produced this, not a model. */
+  usedAi?: boolean
 }
 
 export interface Report {
@@ -142,7 +235,7 @@ export interface Report {
   sections: ReportSection[]
   createdAt: string
   updatedAt: string
-  status: 'draft' | 'in-review' | 'final'
+  status: string
 }
 
 /* ---------- assistant ---------- */
@@ -155,6 +248,11 @@ export interface ChatMessage {
   /** Metric keys / disclosure codes the answer leaned on. */
   citations?: string[]
   pending?: boolean
+  /** False when the deterministic fallback answered, not a model. */
+  usedAi?: boolean
+  /** Which company the backend resolved from the question, if any. */
+  companyId?: number | null
+  companyName?: string | null
 }
 
 /* ---------- data quality ---------- */

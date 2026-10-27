@@ -2,31 +2,26 @@ import { useState } from 'react'
 import { Check, RotateCcw } from 'lucide-react'
 import { useApp } from '@/lib/store'
 import { DEFAULT_FACTORS, EMISSION_FACTORS } from '@/data/metrics'
-import { USING_MOCK } from '@/api/client'
+
 import { Badge, Button, Callout, Card, CardHeader, Field, inputClass } from '@/components/ui'
 
 export default function Settings() {
-  const { factors, setFactors } = useApp()
+  const { aiEnabled } = useApp()
   const [draft, setDraft] = useState<Record<string, string>>(
-    Object.fromEntries(Object.entries(factors).map(([k, v]) => [k, String(v)])),
+    Object.fromEntries(Object.entries(DEFAULT_FACTORS).map(([k, v]) => [k, String(v)])),
   )
   const [saved, setSaved] = useState(false)
 
+  // Factors are authoritative on the backend so a figure stays
+  // reproducible. Editing here previews the effect; persisting it means
+  // changing the catalogue the backend reads.
   const apply = () => {
-    const next: Record<string, number> = {}
-    for (const [k, v] of Object.entries(draft)) {
-      const n = Number(v)
-      next[k] = Number.isFinite(n) && n > 0 ? n : DEFAULT_FACTORS[k]
-    }
-    setFactors(next)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
-  const reset = () => {
+  const reset = () =>
     setDraft(Object.fromEntries(Object.entries(DEFAULT_FACTORS).map(([k, v]) => [k, String(v)])))
-    setFactors({ ...DEFAULT_FACTORS })
-  }
 
   return (
     <div className="space-y-5">
@@ -90,24 +85,40 @@ export default function Settings() {
         <CardHeader title="Backend connection" />
         <div className="space-y-4 p-5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-ink">Current mode</span>
-            <Badge tone={USING_MOCK ? 'warning' : 'brand'}>
-              {USING_MOCK ? 'Demo — bundled data' : 'Live backend'}
+            <span className="text-sm text-ink">AI</span>
+            <Badge tone={aiEnabled ? 'brand' : 'warning'}>
+              {aiEnabled === null
+                ? 'Unknown'
+                : aiEnabled
+                  ? 'Gemini connected'
+                  : 'No key — deterministic fallback'}
             </Badge>
           </div>
-          <Callout title="Switching to the Python backend">
-            Set these in <code className="font-mono">.env</code> and restart the dev server. No
-            other change is needed — every screen goes through one typed API client.
+          <Callout title="Enabling Gemini">
+            Get a free key at{' '}
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2"
+            >
+              aistudio.google.com
+            </a>
+            , then set it in <code className="font-mono">backend/.env</code> and restart the
+            API. Without it the AI endpoints return deterministic templates and label
+            themselves as such.
             <pre className="mt-2 overflow-x-auto rounded-md bg-surface-1 p-3 font-mono text-[11px] leading-relaxed text-ink-2">
-{`VITE_USE_MOCK=false
-VITE_API_BASE_URL=http://localhost:8000`}
+{`GEMINI_API_KEY=your-key-here
+GEMINI_MODEL=gemini-2.5-flash`}
             </pre>
+            The key stays on the server. Never put it in a{' '}
+            <code className="font-mono">VITE_</code> variable — those are compiled into the
+            JavaScript bundle and readable by anyone who opens the page.
           </Callout>
           <p className="text-xs leading-relaxed text-ink-2">
             The endpoints the client expects are declared in{' '}
-            <code className="font-mono">src/api/types.ts</code>, and{' '}
-            <code className="font-mono">BACKEND.md</code> maps each one to the Python module in
-            your outline that should serve it.
+            <code className="font-mono">src/api/types.ts</code>, and the API's own interactive
+            docs are at <code className="font-mono">http://localhost:8000/docs</code>.
           </p>
         </div>
       </Card>

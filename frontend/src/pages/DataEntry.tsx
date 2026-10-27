@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Download, Save, Upload } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Check, Download, Save } from 'lucide-react'
+import { api } from '@/api/client'
 import { useApp } from '@/lib/store'
+import type { EsgDataset } from '@/types'
 import { METRICS, metricsForPillar } from '@/data/metrics'
 import { PILLAR_LABEL } from '@/data/frameworks'
 import type { Pillar } from '@/types'
@@ -9,13 +11,30 @@ import { Button, Card, CardHeader, Callout, Field, inputClass, Spinner } from '@
 const PILLARS: Pillar[] = ['E', 'S', 'G']
 
 export default function DataEntry() {
-  const { dataset, year, company, saveDataset, importFile, loading } = useApp()
+  const { year, company, refresh } = useApp()
+  const [dataset, setDataset] = useState<EsgDataset | null>(null)
+  const [loading, setLoading] = useState(false)
   const [draft, setDraft] = useState<Record<string, string>>({})
   const [tab, setTab] = useState<Pillar>('E')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [notice, setNotice] = useState<{ tone: 'ok' | 'err'; text: string } | null>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
+
+  const loadDataset = useCallback(async () => {
+    if (!company) return
+    setLoading(true)
+    try {
+      setDataset(await api.getDataset(company.id, year))
+    } catch (e) {
+      setNotice({ tone: 'err', text: (e as Error).message })
+    } finally {
+      setLoading(false)
+    }
+  }, [company, year])
+
+  useEffect(() => {
+    void loadDataset()
+  }, [loadDataset])
 
   useEffect(() => {
     if (!dataset) return
@@ -54,7 +73,10 @@ export default function DataEntry() {
         const raw = draft[m.key]
         values[m.key] = raw === '' || raw === undefined ? null : Number(raw)
       }
-      await saveDataset(values)
+      if (!company) return
+      const saved = await api.saveDataset({ companyId: company.id, year, values })
+      setDataset(saved)
+      await refresh()
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch (e) {
@@ -64,17 +86,6 @@ export default function DataEntry() {
     }
   }
 
-  const onImport = async (file: File) => {
-    setNotice(null)
-    try {
-      const count = await importFile(file)
-      setNotice({ tone: 'ok', text: `Imported ${count} value${count === 1 ? '' : 's'} from ${file.name}.` })
-    } catch (e) {
-      setNotice({ tone: 'err', text: (e as Error).message })
-    } finally {
-      if (fileRef.current) fileRef.current.value = ''
-    }
-  }
 
   const downloadTemplate = () => {
     const csv = ['metric,value,unit,label', ...METRICS.map((m) => `${m.key},,${m.unit},"${m.label}"`)].join('\n')
@@ -84,6 +95,10 @@ export default function DataEntry() {
     a.download = 'esg-data-template.csv'
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  if (!company) {
+    return <Callout>Choose a company in the search bar above to enter its data.</Callout>
   }
 
   if (loading && !dataset) {
@@ -107,19 +122,6 @@ export default function DataEntry() {
           <Button onClick={downloadTemplate} size="sm">
             <Download size={14} aria-hidden /> CSV template
           </Button>
-          <Button onClick={() => fileRef.current?.click()} size="sm">
-            <Upload size={14} aria-hidden /> Import
-          </Button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,text/csv"
-            className="sr-only"
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) void onImport(f)
-            }}
-          />
           <Button variant="primary" onClick={() => void onSave()} disabled={!dirty || saving} size="sm">
             {saving ? <Spinner size={14} /> : saved ? <Check size={14} aria-hidden /> : <Save size={14} aria-hidden />}
             {saving ? 'Saving' : saved ? 'Saved' : 'Save'}
@@ -194,11 +196,10 @@ export default function DataEntry() {
         </div>
       </Card>
 
-      <Callout title="CSV import format">
-        A two-column file with headers <code className="font-mono">metric</code> and{' '}
-        <code className="font-mono">value</code>. The <code className="font-mono">metric</code>{' '}
-        column must use the machine keys from the template above — rows with an unrecognised key are
-        skipped and reported rather than silently dropped.
+      <Callout title="Prefer to upload a report?">
+        The upload page reads a PDF, spreadsheet or text report and extracts these figures
+        from it, so you do not have to key them in. Anything it finds lands here, where you
+        can correct it.
       </Callout>
     </div>
   )

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Check, Download, FileText, RefreshCw, Sparkles, Wand2 } from 'lucide-react'
-import { api, USING_MOCK } from '@/api/client'
+import { api } from '@/api/client'
 import { useApp } from '@/lib/store'
 import { metricLabel } from '@/lib/calculator'
 import type { Report, ReportSectionKey } from '@/types'
 import { Badge, Button, Callout, Card, CardHeader, Spinner } from '@/components/ui'
 
 export default function ReportBuilder() {
-  const { company, year, framework } = useApp()
+  const { company, year, framework, aiEnabled } = useApp()
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState<ReportSectionKey | 'all' | null>(null)
@@ -37,19 +37,9 @@ export default function ReportBuilder() {
       const controller = new AbortController()
       abortRef.current = controller
       try {
-        const res = await api.generateSection(report.id, key, controller.signal)
-        setReport((r) =>
-          r
-            ? {
-                ...r,
-                sections: r.sections.map((s) =>
-                  s.key === key
-                    ? { ...s, body: res.body, groundedIn: res.groundedIn, generatedAt: res.generatedAt, edited: false }
-                    : s,
-                ),
-              }
-            : r,
-        )
+        // The endpoint returns the whole report, so there is nothing to
+        // merge by hand — the server's copy is the source of truth.
+        setReport(await api.generateSection(report.id, key, controller.signal))
       } catch (e) {
         setError((e as Error).message)
       } finally {
@@ -65,20 +55,10 @@ export default function ReportBuilder() {
     setGenerating('all')
     setError(null)
     try {
-      for (const s of report.sections) {
-        const res = await api.generateSection(report.id, s.key)
-        setReport((r) =>
-          r
-            ? {
-                ...r,
-                sections: r.sections.map((x) =>
-                  x.key === s.key
-                    ? { ...x, body: res.body, groundedIn: res.groundedIn, generatedAt: res.generatedAt, edited: false }
-                    : x,
-                ),
-              }
-            : r,
-        )
+      let latest = report
+      for (const section of report.sections) {
+        latest = await api.generateSection(latest.id, section.key)
+        setReport(latest)
       }
     } catch (e) {
       setError((e as Error).message)
@@ -97,7 +77,7 @@ export default function ReportBuilder() {
     if (!report) return
     const section = report.sections.find((s) => s.key === key)
     if (!section) return
-    await api.saveSection(report.id, key, section.body)
+    setReport(await api.saveSection(report.id, key, section.body))
     setSavedKey(key)
     setTimeout(() => setSavedKey(null), 2000)
   }
@@ -120,6 +100,10 @@ export default function ReportBuilder() {
     } finally {
       setExporting(false)
     }
+  }
+
+  if (!company) {
+    return <Callout>Choose a company in the search bar above to build its report.</Callout>
   }
 
   if (loading) {
@@ -168,11 +152,11 @@ export default function ReportBuilder() {
         before export — the model can phrase a correct number misleadingly, and no automated check
         catches that. Edits you make here are kept and are never overwritten unless you regenerate
         that section.
-        {USING_MOCK && (
+        {aiEnabled === false && (
           <>
             {' '}
-            In demo mode the text is assembled from templates rather than a language model, so the
-            prose is more rigid than the real thing.
+            No Gemini key is configured, so the text is assembled from templates rather than a
+            language model — the prose is more rigid, and each section says so.
           </>
         )}
       </Callout>
@@ -187,7 +171,11 @@ export default function ReportBuilder() {
                   <span className="flex flex-wrap items-center gap-2">
                     {section.title}
                     {section.edited && <Badge tone="brand">Edited</Badge>}
-                    {section.generatedAt && !section.edited && <Badge>AI draft</Badge>}
+                    {section.generatedAt && !section.edited && (
+                      <Badge tone={section.usedAi ? 'brand' : 'warning'}>
+                        {section.usedAi ? 'AI draft' : 'Template draft'}
+                      </Badge>
+                    )}
                   </span>
                 }
                 subtitle={

@@ -1,52 +1,58 @@
 import type {
   ChatMessage,
   Company,
+  Dashboard,
   EsgDataset,
   Framework,
   Report,
   ReportSectionKey,
+  UploadResult,
+  User,
 } from '@/types'
 
 /**
- * The contract between this frontend and the Python backend.
- *
- * Implement these endpoints in FastAPI (or Flask) over the same
- * database.py / calculator.py / ai_service.py functions the outline
- * already describes — no logic needs to move.
+ * The contract between this frontend and the FastAPI backend in
+ * ../backend. Every screen goes through this interface, so swapping the
+ * mock implementation for the real one touches nothing else.
  */
 export interface EsgApi {
-  /** GET /companies */
-  listCompanies(): Promise<Company[]>
-  /** POST /companies */
-  createCompany(input: Omit<Company, 'id' | 'years'>): Promise<Company>
+  /* auth */
+  login(username: string, password: string): Promise<{ token: string; user: User }>
+  signup(input: {
+    username: string
+    password: string
+    email?: string
+    company_name?: string
+    ticker?: string
+    industry?: string
+  }): Promise<{ token: string; user: User }>
+  me(): Promise<User>
 
-  /** GET /companies/:id/data?year= */
+  /* companies — the database stays idle until a term is typed */
+  searchCompanies(query: string): Promise<Company[]>
+  getCompany(companyId: number): Promise<Company>
+
+  /* one call per screen */
+  getDashboard(companyId: number, year: number, framework: Framework): Promise<Dashboard>
+
   getDataset(companyId: number, year: number): Promise<EsgDataset>
-  /** PUT /companies/:id/data?year= */
   saveDataset(dataset: EsgDataset): Promise<EsgDataset>
-  /** POST /companies/:id/data/import  (multipart CSV or XLSX) */
-  importDataset(companyId: number, year: number, file: File): Promise<EsgDataset>
 
-  /** GET /companies/:id/reports?year= */
+  /* upload a report — the backend extracts metrics from it */
+  uploadReport(companyId: number, year: number, file: File): Promise<UploadResult>
+
   getReport(companyId: number, year: number, framework: Framework): Promise<Report>
-  /** POST /reports/:id/sections/:key/generate — calls ai_service.generate_section */
-  generateSection(
-    reportId: number,
-    section: ReportSectionKey,
-    signal?: AbortSignal,
-  ): Promise<{ body: string; groundedIn: string[]; generatedAt: string }>
-  /** PUT /reports/:id/sections/:key */
-  saveSection(reportId: number, section: ReportSectionKey, body: string): Promise<void>
-  /** POST /reports/:id/export → PDF bytes from pdf_service.py */
+  generateSection(reportId: number, section: ReportSectionKey, signal?: AbortSignal): Promise<Report>
+  saveSection(reportId: number, section: ReportSectionKey, body: string): Promise<Report>
   exportPdf(reportId: number): Promise<Blob>
 
-  /** POST /assistant/chat — grounded Q&A over the company's own numbers */
   chat(
-    companyId: number,
-    year: number,
     messages: ChatMessage[],
+    opts: { companyId?: number | null; year?: number | null },
     signal?: AbortSignal,
   ): Promise<ChatMessage>
+
+  aiStatus(): Promise<{ enabled: boolean; model: string | null; note: string }>
 }
 
 export class ApiError extends Error {

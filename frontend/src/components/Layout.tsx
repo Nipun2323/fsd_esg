@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import {
   Bot,
-  Building2,
   ClipboardCheck,
   FileText,
+  FileUp,
   LayoutDashboard,
   Leaf,
+  LogOut,
   Menu,
   Monitor,
   Moon,
@@ -16,15 +17,16 @@ import {
   X,
 } from 'lucide-react'
 import { useApp, useTheme, type Theme } from '@/lib/store'
+import { useAuth } from '@/lib/auth'
 import { Assistant } from './Assistant'
-import { USING_MOCK } from '@/api/client'
+import { CompanySearch } from './CompanySearch'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/upload', label: 'Upload report', icon: FileUp },
   { to: '/data', label: 'Data entry', icon: PencilLine },
   { to: '/compliance', label: 'Compliance', icon: ClipboardCheck },
   { to: '/report', label: 'Report', icon: FileText },
-  { to: '/companies', label: 'Companies', icon: Building2 },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -60,25 +62,21 @@ function ThemeToggle() {
 }
 
 function ContextBar() {
-  const { companies, company, year, framework, setCompanyId, setYear, setFramework } = useApp()
-  const years = company?.years ?? []
+  const { company, year, framework, selectCompany, setYear, setFramework } = useApp()
   const select =
     'rounded-lg border border-hairline-strong bg-surface-1 px-2.5 py-1.5 text-sm text-ink transition-colors hover:bg-surface-2 focus:border-brand focus:outline-none'
 
+  const thisYear = new Date().getFullYear()
+  const years = Array.from({ length: 6 }, (_, i) => thisYear - i)
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <select
-        className={select}
-        value={company?.id ?? ''}
-        onChange={(e) => setCompanyId(Number(e.target.value))}
-        aria-label="Company"
-      >
-        {companies.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
+    <div className="flex w-full flex-wrap items-center gap-2">
+      <div className="min-w-[220px] flex-1 sm:max-w-sm">
+        <CompanySearch
+          onSelect={selectCompany}
+          placeholder={company ? `${company.name} — change…` : 'Search company or ticker…'}
+        />
+      </div>
 
       <select
         className={`${select} tnum`}
@@ -118,6 +116,8 @@ function ContextBar() {
 export function Layout() {
   const [navOpen, setNavOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+  const { user, logout } = useAuth()
+  const { aiEnabled } = useApp()
 
   return (
     <div className="flex min-h-dvh bg-page">
@@ -178,11 +178,30 @@ export function Layout() {
         </ul>
 
         <div className="space-y-3 p-3">
-          {USING_MOCK && (
+          {aiEnabled === false && (
             <p className="rounded-lg bg-surface-2 px-3 py-2 text-[11px] leading-snug text-ink-muted">
-              Demo mode — bundled sample data. Set{' '}
-              <code className="font-mono">VITE_USE_MOCK=false</code> to connect the backend.
+              No Gemini key configured — AI replies fall back to deterministic templates.
             </p>
+          )}
+          {user && (
+            <div className="flex items-center gap-2 rounded-lg border border-hairline px-2.5 py-2">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-medium text-ink">
+                  {user.username}
+                </span>
+                <span className="block text-[10px] text-ink-muted">
+                  {user.is_admin ? 'Administrator' : 'Company account'}
+                </span>
+              </span>
+              <button
+                onClick={logout}
+                aria-label="Sign out"
+                title="Sign out"
+                className="shrink-0 rounded p-1 text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
+              >
+                <LogOut size={14} aria-hidden />
+              </button>
+            </div>
           )}
           <ThemeToggle />
         </div>
@@ -210,7 +229,7 @@ export function Layout() {
             Ask AI
           </button>
 
-          <div className="order-3 w-full lg:order-2 lg:w-auto">
+          <div className="order-3 w-full lg:order-2 lg:flex-1">
             <ContextBar />
           </div>
         </header>

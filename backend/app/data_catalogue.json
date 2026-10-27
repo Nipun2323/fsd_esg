@@ -1,0 +1,543 @@
+{
+  "metrics": [
+    {
+      "key": "electricity_kwh",
+      "label": "Grid electricity purchased",
+      "pillar": "E",
+      "unit": "kWh",
+      "help": "Total drawn from the grid across all sites for the year.",
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P6-E",
+        "ESRS E1"
+      ]
+    },
+    {
+      "key": "renewable_kwh",
+      "label": "Renewable electricity",
+      "pillar": "E",
+      "unit": "kWh",
+      "help": "Self-generated or purchased with certificates.",
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P6-E",
+        "ESRS E1"
+      ]
+    },
+    {
+      "key": "diesel_litres",
+      "label": "Diesel consumed",
+      "pillar": "E",
+      "unit": "L",
+      "help": "Generators and owned vehicles.",
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P6-E",
+        "ESRS E1"
+      ]
+    },
+    {
+      "key": "petrol_litres",
+      "label": "Petrol consumed",
+      "pillar": "E",
+      "unit": "L",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P6-E",
+        "ESRS E1"
+      ]
+    },
+    {
+      "key": "water_kl",
+      "label": "Water withdrawn",
+      "pillar": "E",
+      "unit": "kL",
+      "help": "All sources combined.",
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P6-E",
+        "ESRS E3"
+      ]
+    },
+    {
+      "key": "water_recycled_kl",
+      "label": "Water recycled or reused",
+      "pillar": "E",
+      "unit": "kL",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P6-L",
+        "ESRS E3"
+      ]
+    },
+    {
+      "key": "waste_total_t",
+      "label": "Total waste generated",
+      "pillar": "E",
+      "unit": "t",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P6-E",
+        "ESRS E5"
+      ]
+    },
+    {
+      "key": "waste_recycled_t",
+      "label": "Waste diverted from disposal",
+      "pillar": "E",
+      "unit": "t",
+      "help": "Recycled, reused or recovered.",
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P6-E",
+        "ESRS E5"
+      ]
+    },
+    {
+      "key": "hazardous_waste_t",
+      "label": "Hazardous waste",
+      "pillar": "E",
+      "unit": "t",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P6-E",
+        "ESRS E2"
+      ]
+    },
+    {
+      "key": "employees_total",
+      "label": "Total employees",
+      "pillar": "S",
+      "unit": "headcount",
+      "help": "Permanent and contractual, at year end.",
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-A",
+        "BRSR-P3-E",
+        "ESRS S1"
+      ]
+    },
+    {
+      "key": "employees_female",
+      "label": "Female employees",
+      "pillar": "S",
+      "unit": "headcount",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-A",
+        "BRSR-P5-E",
+        "ESRS S1"
+      ]
+    },
+    {
+      "key": "women_in_management_pct",
+      "label": "Women in management",
+      "pillar": "S",
+      "unit": "%",
+      "help": null,
+      "kind": "percent",
+      "mapsTo": [
+        "BRSR-P5-E",
+        "ESRS S1"
+      ]
+    },
+    {
+      "key": "training_hours",
+      "label": "Training hours delivered",
+      "pillar": "S",
+      "unit": "hours",
+      "help": "Total across the workforce, all topics.",
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P3-E",
+        "ESRS S1"
+      ]
+    },
+    {
+      "key": "ltifr",
+      "label": "Lost-time injuries",
+      "pillar": "S",
+      "unit": "count",
+      "help": "Recordable work-related injuries causing lost time.",
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P3-E",
+        "ESRS S1"
+      ]
+    },
+    {
+      "key": "hours_worked",
+      "label": "Total hours worked",
+      "pillar": "S",
+      "unit": "hours",
+      "help": "Needed to express injuries as a rate.",
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P3-E",
+        "ESRS S1"
+      ]
+    },
+    {
+      "key": "attrition_pct",
+      "label": "Voluntary attrition",
+      "pillar": "S",
+      "unit": "%",
+      "help": null,
+      "kind": "percent",
+      "mapsTo": [
+        "BRSR-P3-E",
+        "ESRS S1"
+      ]
+    },
+    {
+      "key": "csr_spend",
+      "label": "Community investment",
+      "pillar": "S",
+      "unit": "currency",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P8-E",
+        "ESRS S3"
+      ]
+    },
+    {
+      "key": "complaints_consumer",
+      "label": "Consumer complaints received",
+      "pillar": "S",
+      "unit": "count",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P9-E",
+        "ESRS S4"
+      ]
+    },
+    {
+      "key": "supplier_assessed_pct",
+      "label": "Suppliers assessed on social criteria",
+      "pillar": "S",
+      "unit": "%",
+      "help": null,
+      "kind": "percent",
+      "mapsTo": [
+        "BRSR-P3-L",
+        "ESRS S2"
+      ]
+    },
+    {
+      "key": "board_size",
+      "label": "Board size",
+      "pillar": "G",
+      "unit": "members",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-B",
+        "ESRS 2",
+        "ESRS G1"
+      ]
+    },
+    {
+      "key": "board_female",
+      "label": "Women on the board",
+      "pillar": "G",
+      "unit": "members",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-B",
+        "ESRS 2"
+      ]
+    },
+    {
+      "key": "board_independent",
+      "label": "Independent directors",
+      "pillar": "G",
+      "unit": "members",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-B",
+        "ESRS 2"
+      ]
+    },
+    {
+      "key": "anti_corruption_policy",
+      "label": "Anti-corruption policy in force",
+      "pillar": "G",
+      "unit": "yes/no",
+      "help": null,
+      "kind": "boolean",
+      "mapsTo": [
+        "BRSR-P1-E",
+        "ESRS G1"
+      ]
+    },
+    {
+      "key": "whistleblower_policy",
+      "label": "Whistleblower mechanism",
+      "pillar": "G",
+      "unit": "yes/no",
+      "help": null,
+      "kind": "boolean",
+      "mapsTo": [
+        "BRSR-P1-E",
+        "ESRS G1"
+      ]
+    },
+    {
+      "key": "grievance_mechanism",
+      "label": "Stakeholder grievance mechanism",
+      "pillar": "G",
+      "unit": "yes/no",
+      "help": null,
+      "kind": "boolean",
+      "mapsTo": [
+        "BRSR-P4-E",
+        "ESRS 2"
+      ]
+    },
+    {
+      "key": "corruption_cases",
+      "label": "Confirmed corruption incidents",
+      "pillar": "G",
+      "unit": "count",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P1-E",
+        "ESRS G1"
+      ]
+    },
+    {
+      "key": "data_breaches",
+      "label": "Data privacy breaches",
+      "pillar": "G",
+      "unit": "count",
+      "help": null,
+      "kind": "number",
+      "mapsTo": [
+        "BRSR-P9-E",
+        "ESRS S4"
+      ]
+    },
+    {
+      "key": "board_esg_oversight",
+      "label": "Board-level ESG oversight",
+      "pillar": "G",
+      "unit": "yes/no",
+      "help": "A named director or committee accountable for sustainability.",
+      "kind": "boolean",
+      "mapsTo": [
+        "BRSR-B",
+        "ESRS 2"
+      ]
+    }
+  ],
+  "factors": [
+    {
+      "key": "grid_electricity_in",
+      "label": "Grid electricity \u2014 India",
+      "value": 0.727,
+      "unit": "kg CO\u2082e / kWh",
+      "source": "CEA CO\u2082 Baseline Database (weighted average, renewables-adjusted)",
+      "vintage": "FY 2023-24",
+      "caveat": "Widely-circulated 0.82 is the FY 2015-16 figure and is out of date. Confirm the current value against the CEA user guide before filing."
+    },
+    {
+      "key": "grid_electricity_eu",
+      "label": "Grid electricity \u2014 EU average",
+      "value": 0.23,
+      "unit": "kg CO\u2082e / kWh",
+      "source": "European Environment Agency, EU-27 average grid intensity",
+      "vintage": "indicative",
+      "caveat": "Placeholder. EU intensity varies enormously by member state \u2014 use your own country factor."
+    },
+    {
+      "key": "diesel",
+      "label": "Diesel (stationary / mobile)",
+      "value": 2.68,
+      "unit": "kg CO\u2082e / litre",
+      "source": "DEFRA / BEIS GHG conversion factors",
+      "vintage": "indicative",
+      "caveat": null
+    },
+    {
+      "key": "petrol",
+      "label": "Petrol",
+      "value": 2.31,
+      "unit": "kg CO\u2082e / litre",
+      "source": "DEFRA / BEIS GHG conversion factors",
+      "vintage": "indicative",
+      "caveat": null
+    },
+    {
+      "key": "lpg",
+      "label": "LPG",
+      "value": 1.56,
+      "unit": "kg CO\u2082e / kg",
+      "source": "DEFRA / BEIS GHG conversion factors",
+      "vintage": "indicative",
+      "caveat": null
+    }
+  ],
+  "principles": [
+    {
+      "code": "P1",
+      "short": "Ethics & transparency",
+      "statement": "Businesses should conduct and govern themselves with integrity in a manner that is ethical, transparent and accountable.",
+      "pillar": "G"
+    },
+    {
+      "code": "P2",
+      "short": "Sustainable & safe goods",
+      "statement": "Businesses should provide goods and services in a manner that is sustainable and safe.",
+      "pillar": "E"
+    },
+    {
+      "code": "P3",
+      "short": "Employee wellbeing",
+      "statement": "Businesses should respect and promote the wellbeing of all employees, including those in their value chains.",
+      "pillar": "S"
+    },
+    {
+      "code": "P4",
+      "short": "Stakeholder responsiveness",
+      "statement": "Businesses should respect the interests of and be responsive to all their stakeholders.",
+      "pillar": "S"
+    },
+    {
+      "code": "P5",
+      "short": "Human rights",
+      "statement": "Businesses should respect and promote human rights.",
+      "pillar": "S"
+    },
+    {
+      "code": "P6",
+      "short": "Environment",
+      "statement": "Businesses should respect and make efforts to protect and restore the environment.",
+      "pillar": "E"
+    },
+    {
+      "code": "P7",
+      "short": "Policy advocacy",
+      "statement": "Businesses, when engaging in influencing public and regulatory policy, should do so in a manner that is responsible and transparent.",
+      "pillar": "G"
+    },
+    {
+      "code": "P8",
+      "short": "Inclusive growth",
+      "statement": "Businesses should promote inclusive growth and equitable development.",
+      "pillar": "S"
+    },
+    {
+      "code": "P9",
+      "short": "Consumer value",
+      "statement": "Businesses should engage with and provide value to their consumers and customers in a responsible manner.",
+      "pillar": "S"
+    }
+  ],
+  "esrs": [
+    {
+      "code": "ESRS 1",
+      "title": "General requirements",
+      "group": "Cross-cutting",
+      "pillar": null,
+      "alwaysApplies": true
+    },
+    {
+      "code": "ESRS 2",
+      "title": "General disclosures",
+      "group": "Cross-cutting",
+      "pillar": null,
+      "alwaysApplies": true
+    },
+    {
+      "code": "ESRS E1",
+      "title": "Climate change",
+      "group": "Environment",
+      "pillar": "E",
+      "alwaysApplies": false
+    },
+    {
+      "code": "ESRS E2",
+      "title": "Pollution",
+      "group": "Environment",
+      "pillar": "E",
+      "alwaysApplies": false
+    },
+    {
+      "code": "ESRS E3",
+      "title": "Water and marine resources",
+      "group": "Environment",
+      "pillar": "E",
+      "alwaysApplies": false
+    },
+    {
+      "code": "ESRS E4",
+      "title": "Biodiversity and ecosystems",
+      "group": "Environment",
+      "pillar": "E",
+      "alwaysApplies": false
+    },
+    {
+      "code": "ESRS E5",
+      "title": "Resource use and circular economy",
+      "group": "Environment",
+      "pillar": "E",
+      "alwaysApplies": false
+    },
+    {
+      "code": "ESRS S1",
+      "title": "Own workforce",
+      "group": "Social",
+      "pillar": "S",
+      "alwaysApplies": false
+    },
+    {
+      "code": "ESRS S2",
+      "title": "Workers in the value chain",
+      "group": "Social",
+      "pillar": "S",
+      "alwaysApplies": false
+    },
+    {
+      "code": "ESRS S3",
+      "title": "Affected communities",
+      "group": "Social",
+      "pillar": "S",
+      "alwaysApplies": false
+    },
+    {
+      "code": "ESRS S4",
+      "title": "Consumers and end-users",
+      "group": "Social",
+      "pillar": "S",
+      "alwaysApplies": false
+    },
+    {
+      "code": "ESRS G1",
+      "title": "Business conduct",
+      "group": "Governance",
+      "pillar": "G",
+      "alwaysApplies": false
+    }
+  ],
+  "brsrCore": [
+    "Green-house gas footprint",
+    "Water footprint",
+    "Energy footprint",
+    "Embracing circularity \u2014 waste management",
+    "Employee wellbeing and safety",
+    "Enabling gender diversity in business",
+    "Enabling inclusive development",
+    "Fairness in engaging with customers and suppliers",
+    "Openness of business"
+  ]
+}

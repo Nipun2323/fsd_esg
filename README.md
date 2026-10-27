@@ -4,8 +4,9 @@
 
 **ESG reporting automation for small and medium enterprises**
 
-Enter your company data once. Get calculated metrics, a disclosure-by-disclosure
-readiness view, an AI-drafted narrative you can edit, and an exportable report.
+Sign in, pick a company, upload its report. Gemini extracts the ESG figures,
+the backend computes the metrics and maps them onto the disclosure
+requirements, and you get an editable report and a PDF.
 
 Aligned to **India's BRSR** (SEBI format) and the **EU's CSRD / ESRS**.
 
@@ -15,8 +16,10 @@ Aligned to **India's BRSR** (SEBI format) and the **EU's CSRD / ESRS**.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646cff?logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06b6d4?logo=tailwindcss&logoColor=white)
-![Python](https://img.shields.io/badge/Python-planned-3776ab?logo=python&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-planned-4479a1?logo=mysql&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.13-3776ab?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688?logo=fastapi&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL_%2F_SQLite-4479a1?logo=mysql&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini-2.5_Flash-8e75b2?logo=googlegemini&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 [![Live demo](https://img.shields.io/badge/Live_demo-fsd--esg.netlify.app-00c7b7?logo=netlify&logoColor=white)](https://fsd-esg.netlify.app)
 
@@ -66,15 +69,18 @@ a drafted narrative grounded in the company's own numbers.
 
 | | |
 |---|---|
-| **Dashboard** | Headline metrics with year-on-year change, emissions and energy trends, and every derived figure shown with the basis it was calculated from |
-| **Data entry** | Forms grouped by E / S / G pillar, CSV import with a downloadable template, per-pillar completion tracking |
+| **Authentication** | JWT login and company sign-up. A company account sees only its own data; the admin sees all |
+| **722 companies** | Imported ESG ratings dataset, searchable by name or ticker |
+| **Report upload** | Drop a PDF, spreadsheet or text report. Gemini extracts the ESG figures and merges them into that company's year |
+| **Dashboard** | Third-party rating with industry benchmark, then headline metrics, year-on-year change and trends once a report is uploaded |
 | **Compliance** | Disclosure-by-disclosure mapping. BRSR Sections A/B/C across the nine NGRBC principles, essential and leadership tiers separated; all twelve ESRS for CSRD |
-| **Report builder** | Section-by-section drafting, fully editable before export, with the figures behind each draft listed underneath it |
-| **AI assistant** | Answers from the selected company's saved figures. Reports a missing number as missing rather than estimating one |
-| **Multi-entity** | Several reporting entities, multiple financial years, year-on-year comparison |
+| **Report builder** | Gemini drafts each section from the real figures, fully editable, exported as a PDF |
+| **AI chatbot** | Resolves the company from your question and answers only from its saved figures |
 
 Plus: light and dark themes, keyboard-accessible throughout, a table view behind
 every chart, and charts validated for colour-vision deficiency.
+
+**Default login: `Admin` / `12345`.**
 
 ---
 
@@ -103,62 +109,89 @@ every chart, and charts validated for colour-vision deficiency.
 
 ## Quick start
 
-Nothing to install — the app is live at
-**[fsd-esg.netlify.app](https://fsd-esg.netlify.app)**.
-
-To run it locally:
-
-**Requirements:** Node.js 20 or later.
+**Requirements:** Python 3.11+ and Node.js 20+.
 
 ```bash
 git clone https://github.com/Nipun2323/fsd_esg.git
-cd fsd_esg/frontend
-npm install
-npm run dev
+cd fsd_esg
 ```
 
-Open <http://localhost:5173>.
-
-The app ships with demo data for three sample companies, so it runs end to end
-before any backend exists. Point it at the API when that is ready:
+**Terminal 1 — backend**
 
 ```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 cp .env.example .env
+python -m scripts.import_companies                   # loads 722 companies
+uvicorn app.main:app --reload                        # http://localhost:8000
 ```
 
-```ini
-VITE_USE_MOCK=false
-VITE_API_BASE_URL=http://localhost:8000
+**Terminal 2 — frontend**
+
+```bash
+cd frontend
+npm install
+cp .env.example .env
+npm run dev                                          # http://localhost:5173
 ```
+
+Sign in with **`Admin` / `12345`**, search for a company, upload a report.
+
+Or the whole stack including MySQL:
+
+```bash
+docker compose up --build        # frontend :8080, API :8000
+```
+
+### Enabling Gemini
+
+Free key from [aistudio.google.com](https://aistudio.google.com/app/apikey),
+then in `backend/.env`:
+
+```ini
+GEMINI_API_KEY=your-key-here
+```
+
+Without it everything still runs: extraction falls back to pattern
+matching, drafting and the chatbot to deterministic templates over the
+same figures. Each response is flagged so the UI can say which produced
+it. Neither path can invent a number.
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────┐
-│  React frontend                          │
-│  dashboard · data entry · compliance     │
-│  report builder · assistant              │
-└────────────────┬─────────────────────────┘
-                 │  EsgApi  (one typed interface)
-        ┌────────┴────────┐
-        ▼                 ▼
-   mock.ts            http.ts
-   demo data          REST  ──────►  FastAPI
-                                        │
-                      ┌─────────────────┼─────────────────┐
-                      ▼                 ▼                 ▼
-                 database.py      calculator.py     ai_service.py
-                      │                                   │
-                      ▼                                   ▼
-                    MySQL                           pdf_service.py
+┌───────────────────────────────────────────────┐
+│  React frontend                               │
+│  login · dashboard · upload · compliance      │
+│  report builder · assistant                   │
+└────────────────────┬──────────────────────────┘
+                     │  EsgApi — one typed interface
+                     ▼  JWT-authenticated REST
+┌───────────────────────────────────────────────┐
+│  FastAPI                                      │
+│  auth · companies · uploads · reports · chat  │
+└──┬────────────┬───────────┬───────────┬───────┘
+   ▼            ▼           ▼           ▼
+ models    calculator   compliance  ai_service ──► Gemini
+   │        (metrics)   (BRSR/ESRS)      │          │
+   ▼                                     ▼          ▼ no key
+SQLite /                           pdf_service   fallback_narrative
+ MySQL                              (ReportLab)   (deterministic)
 ```
 
-Every call the frontend makes goes through one interface,
-[`frontend/src/api/types.ts`](frontend/src/api/types.ts). Two implementations
-satisfy it — bundled demo data and real HTTP — and a single environment
-variable selects between them. No screen knows which is in use.
+Every frontend call goes through
+[`frontend/src/api/types.ts`](frontend/src/api/types.ts). Every model
+call goes through
+[`backend/app/services/ai_service.py`](backend/app/services/ai_service.py),
+which falls back to deterministic templates when no key is set.
+
+The metric catalogue and framework definitions live in the frontend's
+TypeScript and are **generated** into the backend's
+`app/data_catalogue.json` by `scripts/sync_catalogue.py`, so the two
+halves cannot drift apart on metric keys or units.
 
 ---
 
@@ -166,24 +199,29 @@ variable selects between them. No screen knows which is in use.
 
 ```
 fsd_esg/
-├── frontend/              React + TypeScript web app
+├── backend/               FastAPI + SQLAlchemy
+│   ├── app/
+│   │   ├── main.py        app, CORS, startup seeding
+│   │   ├── models.py      7 tables
+│   │   ├── auth.py        bcrypt + JWT
+│   │   ├── routers/       auth · companies · uploads · reports · chat · meta
+│   │   └── services/      calculator · compliance · ai_service
+│   │                      fallback_narrative · extract · pdf_service
+│   ├── scripts/           import_companies · sync_catalogue
+│   ├── data/companies.csv 722 companies
+│   └── README.md
+├── frontend/              React + TypeScript
 │   ├── src/
-│   │   ├── api/           client.ts (the switch) · types.ts (the contract)
-│   │   │                  mock.ts · http.ts · mockData.ts
-│   │   ├── components/    Layout · Assistant · Charts · ui
-│   │   ├── data/          frameworks.ts (BRSR + ESRS) · metrics.ts
-│   │   ├── lib/           calculator.ts · compliance.ts · store.tsx
-│   │   └── pages/         Dashboard · DataEntry · Compliance
-│   │                      ReportBuilder · Companies · Settings
-│   ├── BACKEND.md         endpoint → Python module mapping
-│   └── README.md          full frontend documentation
-├── docs/screenshots/
-└── (backend)              Python + MySQL — to come
+│   │   ├── api/           types.ts (the contract) · http.ts
+│   │   ├── components/    Layout · Assistant · Charts · CompanySearch
+│   │   ├── data/          frameworks.ts · metrics.ts  ← source of truth
+│   │   ├── lib/           auth.tsx · store.tsx · calculator · compliance
+│   │   └── pages/         Login · Dashboard · Upload · DataEntry
+│   │                      Compliance · ReportBuilder · Settings
+│   └── README.md
+├── docker-compose.yml     frontend + API + MySQL
+└── docs/screenshots/
 ```
-
-`frontend/src/data/` is the part to edit when the regulations change. Framework
-definitions and the metric catalogue are data rather than code, and the
-compliance screen is generated from them.
 
 ---
 
@@ -207,23 +245,26 @@ removes the need for CORS.
 
 ---
 
-## Backend contract
+## The data, and what it is not
 
-[`frontend/BACKEND.md`](frontend/BACKEND.md) maps all ten endpoints to the
-Python module that should serve each one, with exact request and response
-shapes. The modules stay as the project outline describes them — `database.py`,
-`calculator.py`, `ai_service.py`, `pdf_service.py` — with a thin FastAPI layer
-calling them.
+The bundled dataset is **722 companies with ESG scores and grades** —
+environment, social, governance and total, each with a letter grade and
+a percentile computed across the set at import time.
 
-Two contracts that are easy to get wrong:
+It contains **no activity data**: no electricity, fuel, water, waste or
+headcount. Emissions cannot be derived from it. That is why a company
+shows a ratings view until someone uploads its report, and the full
+emissions dashboard afterwards.
 
-**A metric that has not been entered must be `null`, never `0`.** The gap
-detection and compliance screens treat an unmeasured figure and a measured zero
-as different claims, and so will anyone auditing the report.
+Importing is idempotent and auto-detects two CSV layouts:
 
-**`frontend/src/data/metrics.ts` is the canonical metric catalogue.** The `key`
-of each entry is what both API payloads and the MySQL `esg_data.metric_name`
-column should use.
+```bash
+cd backend && python -m scripts.import_companies [path/to/file.csv]
+```
+
+**A metric that was not reported is absent, never `0`.** An unmeasured
+figure and a measured zero are different claims; the gap detection, the
+coverage figure and the drafting all depend on the distinction.
 
 ---
 

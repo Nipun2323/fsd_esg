@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowUp, Bot, Sparkles, Square, X } from 'lucide-react'
-import { api, USING_MOCK } from '@/api/client'
+import { api } from '@/api/client'
 import { useApp } from '@/lib/store'
 import type { ChatMessage } from '@/types'
 import { metricLabel } from '@/lib/calculator'
@@ -40,7 +40,7 @@ function RichText({ text }: { text: string }) {
 }
 
 export function Assistant({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { company, year } = useApp()
+  const { company, year, aiEnabled } = useApp()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
@@ -66,7 +66,7 @@ export function Assistant({ open, onClose }: { open: boolean; onClose: () => voi
 
   const send = useCallback(
     async (text: string) => {
-      if (!text.trim() || !company || busy) return
+      if (!text.trim() || busy) return
       const userMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'user',
@@ -82,7 +82,11 @@ export function Assistant({ open, onClose }: { open: boolean; onClose: () => voi
       abortRef.current = controller
 
       try {
-        const reply = await api.chat(company.id, year, next, controller.signal)
+        const reply = await api.chat(
+          next,
+          { companyId: company?.id ?? null, year },
+          controller.signal,
+        )
         setMessages((m) => [...m, reply])
       } catch (e) {
         const msg = (e as Error).message
@@ -137,7 +141,7 @@ export function Assistant({ open, onClose }: { open: boolean; onClose: () => voi
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">ESG assistant</h2>
             <p className="truncate text-[11px] text-ink-muted">
-              {company ? `${company.name} · FY ${year}` : 'No company selected'}
+              {company ? `${company.name} · FY ${year}` : 'Name a company in your question'}
             </p>
           </div>
           <button
@@ -161,11 +165,12 @@ export function Assistant({ open, onClose }: { open: boolean; onClose: () => voi
                   Answers are built from the figures saved for this company and year. If a number
                   has not been entered, it says so rather than estimating one.
                 </p>
-                {USING_MOCK && (
+                {aiEnabled === false && (
                   <p className="mt-2 text-ink-muted">
-                    Demo mode: replies are templated from your data, not written by a language
-                    model. Point <code className="font-mono text-[11px]">VITE_API_BASE_URL</code> at
-                    the backend to use the real model.
+                    No Gemini key is configured, so replies are deterministic templates built
+                    from your figures rather than model output. Set{' '}
+                    <code className="font-mono text-[11px]">GEMINI_API_KEY</code> in{' '}
+                    <code className="font-mono text-[11px]">backend/.env</code>.
                   </p>
                 )}
               </div>

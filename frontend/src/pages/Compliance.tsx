@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { useApp } from '@/lib/store'
-import { evaluate, summarise } from '@/lib/compliance'
 import { metricLabel } from '@/lib/calculator'
 import { BRSR_CORE_ATTRIBUTES, NGRBC_PRINCIPLES } from '@/data/frameworks'
 import { CoverageChart } from '@/components/Charts'
@@ -17,18 +16,12 @@ const FILTERS: Array<{ value: DisclosureStatus | 'all'; label: string }> = [
 ]
 
 export default function Compliance() {
-  const { dataset, framework, year, company, loading } = useApp()
+  const { dashboard, framework, year, company, loading } = useApp()
   const [filter, setFilter] = useState<DisclosureStatus | 'all'>('all')
   const [open, setOpen] = useState<string | null>(null)
 
-  const disclosures = useMemo(
-    () => (dataset ? evaluate(dataset, framework) : []),
-    [dataset, framework],
-  )
-  const summary = useMemo(
-    () => (dataset ? summarise(disclosures, framework) : null),
-    [disclosures, dataset, framework],
-  )
+  const disclosures = useMemo(() => dashboard?.disclosures ?? [], [dashboard])
+  const summary = dashboard?.compliance ?? null
 
   const coverage = useMemo(() => {
     const groups = new Map<
@@ -55,7 +48,13 @@ export default function Compliance() {
     return [...map.entries()]
   }, [visible])
 
-  if (loading && !dataset) {
+  if (!company) {
+    return (
+      <Callout>Choose a company in the search bar above to see its readiness.</Callout>
+    )
+  }
+
+  if (loading && !dashboard) {
     return (
       <div className="flex items-center justify-center gap-2 py-24 text-ink-muted">
         <Spinner /> Loading
