@@ -113,6 +113,50 @@ while the API itself looks healthy.
 
 ---
 
+## Fly.io
+
+`backend/fly.toml` is committed and configured: port 8080, a health
+check on `/api/health`, and scale-to-zero so an idle demo costs close
+to nothing.
+
+```bash
+cd backend
+fly launch --no-deploy      # claims the app name, keeps the existing fly.toml
+fly postgres create         # or attach your own database
+fly postgres attach <name>  # sets DATABASE_URL on the app
+
+fly secrets set \
+  GEMINI_API_KEY=your-key \
+  SECRET_KEY="$(python3 -c 'import secrets;print(secrets.token_urlsafe(48))')" \
+  DEFAULT_ADMIN_PASSWORD=pick-something-real
+
+fly deploy
+```
+
+Seed the dataset once the app is up, as a one-off rather than on every
+boot:
+
+```bash
+fly ssh console -C "python -m scripts.import_companies"
+```
+
+Then narrow CORS to the frontend's origin:
+
+```bash
+fly secrets set CORS_ORIGINS=https://your-frontend-domain
+```
+
+Fly's Postgres hands you a `postgres://` URL; the app rewrites it to
+the driver it actually installs, so no edit is needed.
+
+> The `fly.toml` here was written from the general shape of Fly's
+> configuration, not from their current setup guide — that host is
+> blocked from the environment this was built in. The keys used are
+> long-standing ones, but check `fly launch`'s output: if it rewrites
+> the file, take its version.
+
+---
+
 ## Azure
 
 [Container Apps](https://azure.microsoft.com/products/container-apps)

@@ -1,0 +1,42 @@
+# Fly.io configuration for the ESG API.
+#
+#   cd backend
+#   fly launch --no-deploy        # claims the app name, keeps this file
+#   fly secrets set GEMINI_API_KEY=... SECRET_KEY=... DEFAULT_ADMIN_PASSWORD=...
+#   fly deploy
+#
+# Fly's Postgres sets DATABASE_URL for you when you attach a database;
+# it arrives as postgres://, which the app normalises to the driver it
+# actually installs.
+
+app = "fsd-esg-api"
+primary_region = "bom"          # Mumbai. `fly platform regions` lists the rest.
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  # Leave CORS open only until the frontend has a domain, then narrow it:
+  #   fly secrets set CORS_ORIGINS=https://your-frontend-domain
+  CORS_ORIGINS = "*"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Scale to zero between requests, which is what keeps an idle demo
+  # close to free. First request after a pause pays a cold start.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"               # ReportLab and the PDF build want headroom.
