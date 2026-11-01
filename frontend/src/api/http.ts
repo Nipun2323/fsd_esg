@@ -65,6 +65,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT)
   const token = getToken()
+  // Signing in with the wrong password is a 401 too, but it means
+  // "those credentials are wrong", not "your session expired". Letting
+  // the generic handler claim the latter is both untrue and unhelpful.
+  const isAuthAttempt = path.startsWith('/auth/login') || path.startsWith('/auth/signup')
 
   try {
     const res = await fetch(`${BASE}/api${path}`, {
@@ -77,7 +81,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       },
     })
 
-    if (res.status === 401) {
+    if (res.status === 401 && !isAuthAttempt) {
       setToken(null)
       onUnauthorized?.()
       throw new ApiError('Your session has expired. Please sign in again.', 401)
