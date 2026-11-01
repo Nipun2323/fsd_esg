@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     # say so in the response.
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-3.5-flash"
+    # Hard ceiling on one model call, in seconds. Without it a throttled
+    # or slow response ties up a worker, and enough of those make the
+    # whole API stop answering — including /api/health.
+    gemini_timeout_seconds: int = 45
     # Tried in order when the configured model is unavailable (404) or
     # busy (503). Google retires model names and 503s under load, so a
     # single hard-coded name is a liability.

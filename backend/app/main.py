@@ -21,13 +21,32 @@ app = FastAPI(
     ),
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origin_list,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# A literal "*" in allow_origins is not usable together with
+# allow_credentials: Starlette then sends `Access-Control-Allow-Origin: *`
+# alongside `Access-Control-Allow-Credentials: true`, and browsers reject
+# that pair, so every cross-origin request fails. Matching on a regex makes
+# Starlette echo the caller's origin instead, which is valid.
+_origins = settings.cors_origin_list
+if "*" in _origins:
+    log.warning(
+        "CORS_ORIGINS is '*' — every origin is accepted. Set it to the "
+        "frontend's exact origin before this is public."
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=".*",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 for r in (auth.router, companies.router, uploads.router, reports.router, chat.router, meta.router):
     app.include_router(r)

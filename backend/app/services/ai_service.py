@@ -42,8 +42,17 @@ def _get_client():
         return None
     if _client is None:
         from google import genai
+        from google.genai import types
 
-        _client = genai.Client(api_key=settings.gemini_api_key)
+        _client = genai.Client(
+            api_key=settings.gemini_api_key,
+            # The SDK retries internally with backoff. Left unbounded, a
+            # throttled key turns one request into a very long block.
+            http_options=types.HttpOptions(
+                timeout=settings.gemini_timeout_seconds * 1000,
+                retry_options=types.HttpRetryOptions(attempts=1),
+            ),
+        )
     return _client
 
 
@@ -107,12 +116,18 @@ def _generate(prompt: str, *, system: str | None = None, json_mode: bool = False
                 _active_model = model
             return text
         except Exception as exc:  # noqa: BLE001
+            text = str(exc)
             status = getattr(exc, "code", None) or getattr(exc, "status_code", None)
-            retryable = status in (404, 429, 503) or any(
-                s in str(exc) for s in ("404", "429", "503", "UNAVAILABLE", "NOT_FOUND")
-            )
-            log.warning("Gemini %s failed (%s): %s", model, type(exc).__name__, str(exc)[:200])
-            if not retryable:
+            log.warning("Gemini %s failed (%s): %s", model, type(exc).__name__, text[:200])
+
+            # A quota error is account-wide on the free tier, so walking
+            # the rest of the chain only multiplies the wait before the
+            # same fallback is reached.
+            if status == 429 or "RESOURCE_EXHAUSTED" in text or "429" in text:
+                log.warning("Gemini quota exhausted — using the deterministic fallback.")
+                return None
+
+            if not (status in (404, 503) or "NOT_FOUND" in text or "UNAVAILABLE" in text):
                 break
 
     log.warning("No Gemini model answered; using the deterministic fallback.")
