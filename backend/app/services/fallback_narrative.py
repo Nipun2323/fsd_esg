@@ -83,6 +83,41 @@ def compose(
                 "in the compliance view."
             )
 
+    elif section == "approach":
+        lines.append(
+            f"{name} reports against {standard}. This report covers financial year "
+            f"{company.get('year')} and consolidates the environmental, social and "
+            "governance figures recorded for the business over that period."
+        )
+        lines.append(
+            "Greenhouse gas emissions are reported as Scope 1, covering fuel combusted "
+            "on site and in owned vehicles, and Scope 2, covering purchased "
+            "electricity on a location-based method. Scope 3 value-chain emissions are "
+            "outside the boundary of this report and are not calculated."
+        )
+        if framework == "BRSR":
+            lines.append(
+                "The BRSR format is organised in three sections: Section A general "
+                "disclosures, Section B management and process disclosures, and "
+                "Section C principle-wise performance against the nine principles of "
+                "the National Guidelines on Responsible Business Conduct. Section C "
+                "separates essential indicators, which are mandatory, from leadership "
+                "indicators, which are voluntary."
+            )
+        else:
+            lines.append(
+                "The European Sustainability Reporting Standards comprise twelve "
+                "standards in the first set: two cross-cutting and ten topical. Only "
+                "ESRS 2 applies unconditionally; which topical standards apply depends "
+                "on a double-materiality assessment, which has not been performed for "
+                "this report."
+            )
+        lines.append(
+            "Figures in this report are drawn from the company's own records. They have "
+            "not been externally assured, and should be reviewed by a competent person "
+            "before being relied upon for a regulatory filing."
+        )
+
     elif section == "environmental":
         s1, s2 = say("scope1"), say("scope2")
         if s1 or s2:

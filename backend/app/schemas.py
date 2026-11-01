@@ -5,7 +5,12 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 Framework = Literal["BRSR", "CSRD"]
 SectionKey = Literal[
-    "executive_summary", "environmental", "social", "governance", "recommendations"
+    "executive_summary",
+    "approach",
+    "environmental",
+    "social",
+    "governance",
+    "recommendations",
 ]
 
 

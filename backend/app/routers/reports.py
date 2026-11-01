@@ -16,14 +16,35 @@ router = APIRouter(prefix="/api/reports", tags=["reports"])
 _ORDER: list[str] = list(SECTION_TITLES)
 
 
+def _blank_section(key: str) -> dict:
+    return {
+        "key": key, "title": SECTION_TITLES[key], "body": "",
+        "edited": False, "generatedAt": None, "groundedIn": [], "usedAi": False,
+    }
+
+
 def _blank_sections() -> list[dict]:
-    return [
-        {
-            "key": k, "title": SECTION_TITLES[k], "body": "",
-            "edited": False, "generatedAt": None, "groundedIn": [], "usedAi": False,
-        }
-        for k in _ORDER
-    ]
+    return [_blank_section(k) for k in _ORDER]
+
+
+def _reconcile(report: Report) -> bool:
+    """
+    Bring a stored report up to the current section list.
+
+    A report saved before a section was added would otherwise never gain
+    it, and generating that section would silently do nothing. Returns
+    True when the report changed.
+    """
+    existing = {s["key"]: dict(s) for s in (report.sections or [])}
+    rebuilt = []
+    for key in _ORDER:
+        sec = existing.get(key) or _blank_section(key)
+        sec["title"] = SECTION_TITLES[key]
+        rebuilt.append(sec)
+    if rebuilt != list(report.sections or []):
+        report.sections = rebuilt
+        return True
+    return False
 
 
 def _values(db: Session, company_id: int, year: int) -> tuple[dict, dict | None]:
@@ -71,6 +92,9 @@ def get_or_create(
         db.add(report)
         db.commit()
         db.refresh(report)
+    elif _reconcile(report):
+        db.commit()
+        db.refresh(report)
     return _out(report)
 
 
@@ -93,6 +117,7 @@ def generate(
         raise HTTPException(status_code=404, detail="Report not found")
     ensure_company_access(user, report.company_id)
 
+    _reconcile(report)
     company = db.scalar(
         select(Company).options(selectinload(Company.rating)).where(Company.id == report.company_id)
     )
@@ -153,15 +178,52 @@ def export_pdf(
         raise HTTPException(status_code=404, detail="Report not found")
     ensure_company_access(user, report.company_id)
 
-    company = db.get(Company, report.company_id)
+    company = db.scalar(
+        select(Company).options(selectinload(Company.rating)).where(Company.id == report.company_id)
+    )
     values, _ = _values(db, report.company_id, report.year)
 
+    # Multi-year series for the emissions chart.
+    history = []
+    for ds in db.scalars(
+        select(EsgDataset)
+        .where(EsgDataset.company_id == report.company_id)
+        .order_by(EsgDataset.year)
+    ).all():
+        from app.services.calculator import calculate
+
+        g = {c["key"]: c["value"] for c in calculate(ds.values)}
+        if g.get("scope1") is None and g.get("scope2") is None:
+            continue
+        history.append({
+            "year": ds.year,
+            "scope1": round(g.get("scope1") or 0, 1),
+            "scope2": round(g.get("scope2") or 0, 1),
+        })
+
+    rating = None
+    if company.rating:
+        r = company.rating
+        rating = {
+            f"{p}_{f}": getattr(r, f"{p}_{f}")
+            for p in ("environment", "social", "governance", "total")
+            for f in ("score", "grade", "level", "percentile")
+        }
+        rating["total_grade"] = r.total_grade
+        rating["total_percentile"] = r.total_percentile
+
     pdf = build_report_pdf(
-        company={"name": company.name, "industry": company.industry},
+        company={
+            "name": company.name,
+            "industry": company.industry,
+            "ticker": company.ticker,
+        },
         year=report.year,
         framework=report.framework,
         sections=report.sections,
         values=values,
+        rating=rating,
+        history=history,
     )
     slug = "".join(ch if ch.isalnum() else "-" for ch in company.name.lower()).strip("-")
     filename = f"{slug}-{report.year}-{report.framework.lower()}.pdf"

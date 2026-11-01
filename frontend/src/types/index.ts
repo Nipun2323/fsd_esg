@@ -208,6 +208,7 @@ export interface ComplianceSummary {
 
 export type ReportSectionKey =
   | 'executive_summary'
+  | 'approach'
   | 'environmental'
   | 'social'
   | 'governance'

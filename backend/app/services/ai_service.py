@@ -288,23 +288,43 @@ def _regex_extract(text: str) -> dict[str, float]:
 
 SECTION_TITLES = {
     "executive_summary": "Executive summary",
+    "approach": "Our approach to sustainability",
     "environmental": "Environmental performance",
     "social": "Social performance",
-    "governance": "Governance",
+    "governance": "Governance and business conduct",
     "recommendations": "Priorities for the coming year",
 }
 
-_REPORT_SYSTEM = """You write ESG report sections for a small or medium business.
+# Roughly how long each section should run. The PDF is laid out for an
+# 8-10 page report, and these budgets are what fill it.
+SECTION_WORDS = {
+    "executive_summary": 230,
+    "approach": 200,
+    "environmental": 280,
+    "social": 240,
+    "governance": 240,
+    "recommendations": 260,
+}
+
+_REPORT_SYSTEM = """You write sections of a published corporate ESG report.
 
 Rules you must not break:
-- Use ONLY the figures supplied. Never invent, estimate or round a
+- Use ONLY the figures supplied. Never invent, estimate, or round a
   number into a different one.
 - If a figure is not supplied, do not mention it, and never imply the
   company reported it.
-- Plain professional prose. No marketing language, no claims about
-  performance the numbers do not support.
-- 140 words maximum. No headings, no bullet symbols other than plain
-  hyphens, no markdown emphasis."""
+- Never claim an achievement the numbers do not support, and never
+  describe a figure as good or industry-leading unless a supplied
+  comparison shows it.
+
+Style:
+- The register of a professional annual report: measured, specific,
+  written for an informed reader. Not marketing copy.
+- Lead each paragraph with the substance. Explain what a figure means
+  and what drove a change, not just that it changed.
+- Separate paragraphs with a blank line. Three to five paragraphs.
+- No headings. No markdown. No bullet symbols except where the section
+  guidance explicitly asks for a numbered list."""
 
 
 def generate_section(
@@ -323,21 +343,53 @@ def generate_section(
     standard = "SEBI's BRSR format" if framework == "BRSR" else "the ESRS under CSRD"
 
     guidance = {
-        "executive_summary": "Summarise the year: who the company is, the headline "
-        "environmental and social figures, and what changed.",
-        "environmental": "Cover emissions, energy, water and waste. State the "
-        "calculation basis for Scope 2.",
-        "social": "Cover workforce composition, training and safety.",
-        "governance": "Cover board composition and which policies are and are not "
-        "in force.",
-        "recommendations": "Give numbered, specific actions justified by the figures. "
-        "No generic advice.",
+        "executive_summary": (
+            "Open by placing the company: sector, scale, the year under review. "
+            "Then the headline environmental and social results and what moved "
+            "year on year. Close on the state of reporting readiness and the "
+            "most material gaps, stated plainly."
+        ),
+        "approach": (
+            "Explain how the company approaches sustainability reporting and why "
+            "this framework applies to it. Describe what is measured, the "
+            "boundary of the reporting, and what is deliberately out of scope "
+            "(Scope 3, and for CSRD the double-materiality assessment). Do not "
+            "invent governance structures or commitments that the figures do not "
+            "evidence."
+        ),
+        "environmental": (
+            "Cover emissions, energy, water and waste in that order. State the "
+            "calculation basis for Scope 2 and name the grid factor. Where a "
+            "prior year exists, explain the direction of travel. Be explicit "
+            "that Scope 3 is not calculated."
+        ),
+        "social": (
+            "Cover workforce composition and gender diversity, training "
+            "investment, and health and safety performance. Where attrition is "
+            "supplied, discuss it. Treat safety figures seriously rather than "
+            "in passing."
+        ),
+        "governance": (
+            "Cover board composition and independence, then which policies are "
+            "and are not in force. Name the absent ones plainly as gaps. Where "
+            "corruption or data-breach counts are supplied, report them."
+        ),
+        "recommendations": (
+            "Give a numbered list of four to six specific actions, each "
+            "justified by a figure that was supplied. Order them by what moves "
+            "the numbers most. No generic sustainability advice, and nothing "
+            "that is not warranted by the data."
+        ),
     }[section]
+
+    words = SECTION_WORDS.get(section, 220)
 
     prompt = f"""Write the "{SECTION_TITLES[section]}" section of an ESG report
 structured against {standard}.
 
 {guidance}
+
+Target length: about {words} words.
 
 Figures available (use only these):
 {facts}"""
