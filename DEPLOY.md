@@ -113,6 +113,40 @@ while the API itself looks healthy.
 
 ---
 
+## Render
+
+`render.yaml` is committed. Render reads it, provisions the Postgres
+database, builds `backend/Dockerfile` and gives you a URL.
+
+1. [render.com](https://render.com) -> **New** -> **Blueprint**
+2. Connect the GitHub repo and pick this one
+3. Render shows what the blueprint will create; approve it
+4. Set the three secrets it asks for: `GEMINI_API_KEY`,
+   `DEFAULT_ADMIN_PASSWORD`, `CORS_ORIGINS`
+
+`SECRET_KEY` is generated for you and `DATABASE_URL` is wired to the
+database automatically.
+
+After the first deploy succeeds, set `SEED_ON_BOOT` to `false` in the
+dashboard — otherwise every cold start re-imports the dataset.
+
+### What the free tier costs you
+
+The web service **sleeps after about 15 minutes of inactivity**, and
+the next request waits roughly 50 seconds for it to wake. For a demo
+someone else is going to click, that is a long silence: open the URL
+yourself a minute beforehand.
+
+Render's free Postgres has also historically been **time-limited** —
+check the current terms on the pricing page before relying on it for
+anything you need to keep.
+
+If the sleep is a problem, Cloud Run cold-starts in a few seconds
+rather than tens of seconds, because only the container has to start
+and not the whole instance.
+
+---
+
 ## Fly.io
 
 `backend/fly.toml` is committed and configured: port 8080, a health
@@ -206,14 +240,21 @@ App Runner has no free tier and bills from the first hour.
 
 ## Which to pick
 
-| | Backend idle cost | Database free tier | Card needed |
-|---|---|---|---|
-| **Cloud Run** | Zero — scales to zero | No (use Neon/Supabase) | Yes, for the trial |
-| **Container Apps** | Free monthly grant | 12 months | No, with Azure for Students |
-| **App Runner** | Billed continuously | 12 months | Yes |
+| | Backend idle cost | Cold start | Database free tier | Card needed |
+|---|---|---|---|---|
+| **Cloud Run** | Zero — scales to zero | Seconds | No (use Neon/Supabase) | Yes, for the trial |
+| **Render** | Zero — sleeps | ~50s | Yes, time-limited | No |
+| **Fly.io** | Zero — scales to zero | Seconds | Yes, small | Yes |
+| **Container Apps** | Free monthly grant | Seconds | 12 months | No, with Azure for Students |
+| **App Runner** | Billed continuously | None | 12 months | Yes |
 
-**Cloud Run** if you want the lowest running cost and the least setup.
-**Azure** if you have a student account — the credit and the 12-month
+**Render** is the quickest to get working: no card, and the blueprint
+provisions the database for you. The 50-second wake is the price.
+
+**Cloud Run** if the demo has to feel responsive — same near-zero idle
+cost, but it wakes in seconds.
+
+**Azure** if you have a student account; the credit and the 12-month
 database make it effectively free.
 
 Free tiers and prices change. Check the current pricing page before you
