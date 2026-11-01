@@ -1,4 +1,7 @@
+import secrets
 from functools import lru_cache
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,8 +17,10 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./esg.db"
 
     # --- auth -----------------------------------------------------------
-    # Override in .env for anything other than local development.
-    secret_key: str = "dev-only-change-me"
+    # HS256 wants at least 32 bytes; PyJWT warns below that. The default
+    # is random per process, so forgetting to set SECRET_KEY invalidates
+    # tokens on restart instead of signing everything with a known key.
+    secret_key: str = Field(default_factory=lambda: secrets.token_urlsafe(48))
     access_token_expire_minutes: int = 60 * 12
     jwt_algorithm: str = "HS256"
 
@@ -28,7 +33,11 @@ class Settings(BaseSettings):
     # Absent, the AI endpoints fall back to deterministic templates and
     # say so in the response.
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.5-flash"
+    # Tried in order when the configured model is unavailable (404) or
+    # busy (503). Google retires model names and 503s under load, so a
+    # single hard-coded name is a liability.
+    gemini_fallback_models: str = "gemini-3.5-flash,gemini-flash-latest,gemini-3.8-flash"
 
     # --- misc -----------------------------------------------------------
     cors_origins: str = "http://localhost:5173,http://localhost:4173"
@@ -37,6 +46,15 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def gemini_model_chain(self) -> list[str]:
+        chain = [self.gemini_model]
+        for m in self.gemini_fallback_models.split(","):
+            m = m.strip()
+            if m and m not in chain:
+                chain.append(m)
+        return chain
 
     @property
     def ai_enabled(self) -> bool:

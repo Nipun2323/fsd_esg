@@ -47,10 +47,15 @@ def _get_client():
     return _client
 
 
+# Set to the model that last answered, so status reports what is really
+# serving rather than what was configured.
+_active_model: str | None = None
+
+
 def ai_status() -> dict:
     return {
         "enabled": settings.ai_enabled,
-        "model": settings.gemini_model if settings.ai_enabled else None,
+        "model": (_active_model or settings.gemini_model) if settings.ai_enabled else None,
         "provider": "google-gemini",
         "note": (
             "Live model responses."
@@ -63,25 +68,55 @@ def ai_status() -> dict:
 
 
 def _generate(prompt: str, *, system: str | None = None, json_mode: bool = False) -> str | None:
-    """One call to Gemini. Returns None on any failure, so callers fall back."""
+    """
+    One call to Gemini, trying each model in the chain.
+
+    Google retires model names (404) and throttles under load (503), so
+    a single hard-coded model is a liability. Both of those move on to
+    the next candidate; anything else is that model's own failure and
+    stops the chain. Returns None when nothing answers, and the caller
+    falls back to the deterministic path.
+    """
+    global _active_model
+
     client = _get_client()
     if client is None:
         return None
-    try:
-        from google.genai import types
 
-        cfg = types.GenerateContentConfig(
-            system_instruction=system,
-            temperature=0.2,
-            response_mime_type="application/json" if json_mode else "text/plain",
-        )
-        resp = client.models.generate_content(
-            model=settings.gemini_model, contents=prompt, config=cfg
-        )
-        return (resp.text or "").strip() or None
-    except Exception as exc:  # noqa: BLE001 — any failure must fall back, not 500
-        log.warning("Gemini call failed, falling back to template: %s", exc)
-        return None
+    from google.genai import types
+
+    cfg = types.GenerateContentConfig(
+        system_instruction=system,
+        temperature=0.2,
+        response_mime_type="application/json" if json_mode else "text/plain",
+    )
+
+    # Whatever answered last time goes first — it is the one known to work.
+    chain = settings.gemini_model_chain
+    if _active_model and _active_model in chain:
+        chain = [_active_model] + [m for m in chain if m != _active_model]
+
+    for model in chain:
+        try:
+            resp = client.models.generate_content(model=model, contents=prompt, config=cfg)
+            text = (resp.text or "").strip()
+            if not text:
+                continue
+            if _active_model != model:
+                log.info("Gemini answering on %s", model)
+                _active_model = model
+            return text
+        except Exception as exc:  # noqa: BLE001
+            status = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+            retryable = status in (404, 429, 503) or any(
+                s in str(exc) for s in ("404", "429", "503", "UNAVAILABLE", "NOT_FOUND")
+            )
+            log.warning("Gemini %s failed (%s): %s", model, type(exc).__name__, str(exc)[:200])
+            if not retryable:
+                break
+
+    log.warning("No Gemini model answered; using the deterministic fallback.")
+    return None
 
 
 # ---------------------------------------------------------------------
