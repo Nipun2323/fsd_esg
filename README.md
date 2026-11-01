@@ -144,6 +144,8 @@ Or the whole stack including MySQL:
 docker compose up --build        # frontend :8080, API :8000
 ```
 
+To put it on AWS, Azure or Google Cloud, see **[DEPLOY.md](DEPLOY.md)**.
+
 ### Enabling Gemini
 
 Free key from [aistudio.google.com](https://aistudio.google.com/app/apikey),

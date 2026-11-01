@@ -12,8 +12,13 @@ class Settings(BaseSettings):
 
     # --- database -------------------------------------------------------
     # SQLite by default so the project runs with no server to install.
-    # For the MySQL setup in the project outline, set:
-    #   DATABASE_URL=mysql+pymysql://user:password@localhost:3306/esg
+    #   MySQL:    mysql+pymysql://user:password@host:3306/esg
+    #   Postgres: postgresql+psycopg://user:password@host:5432/esg
+    #
+    # SQLite is fine locally but NOT on a container platform: the
+    # filesystem is ephemeral, so every deploy and every new instance
+    # starts from an empty database. Point DATABASE_URL at a managed
+    # database before deploying.
     database_url: str = "sqlite:///./esg.db"
 
     # --- auth -----------------------------------------------------------
@@ -46,6 +51,28 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def sqlalchemy_url(self) -> str:
+        """
+        Normalise what the hosting platforms actually hand you.
+
+        Heroku-style providers, Render and Azure all emit `postgres://`
+        or bare `postgresql://`, which SQLAlchemy either rejects or
+        resolves to psycopg2 — a driver this project does not install.
+        """
+        url = self.database_url.strip()
+        if url.startswith("postgres://"):
+            url = "postgresql+psycopg://" + url[len("postgres://"):]
+        elif url.startswith("postgresql://"):
+            url = "postgresql+psycopg://" + url[len("postgresql://"):]
+        elif url.startswith("mysql://"):
+            url = "mysql+pymysql://" + url[len("mysql://"):]
+        return url
+
+    @property
+    def is_sqlite(self) -> bool:
+        return self.sqlalchemy_url.startswith("sqlite")
 
     @property
     def gemini_model_chain(self) -> list[str]:

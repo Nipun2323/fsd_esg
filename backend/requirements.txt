@@ -3,9 +3,13 @@ fastapi==0.162.0
 uvicorn[standard]==0.54.0
 python-multipart==0.0.32
 
-# Database — SQLAlchemy speaks both SQLite and MySQL
+# Database — SQLAlchemy speaks SQLite, MySQL and PostgreSQL.
+# Managed Postgres is the cheapest durable option on all three major
+# clouds, so the driver ships by default rather than being a surprise
+# at deploy time.
 SQLAlchemy==2.1.6
 PyMySQL==1.2.3
+psycopg[binary]==3.3.6
 cryptography==50.0.2
 
 # Config & validation
