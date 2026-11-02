@@ -146,6 +146,9 @@ docker compose up --build        # frontend :8080, API :8000
 
 To put it on AWS, Azure or Google Cloud, see **[DEPLOY.md](DEPLOY.md)**.
 
+For the stack, how the pieces connect and why each was chosen, see
+**[ARCHITECTURE.md](ARCHITECTURE.md)**.
+
 ### Enabling Gemini
 
 Free key from [aistudio.google.com](https://aistudio.google.com/app/apikey),
